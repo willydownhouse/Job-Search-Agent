@@ -2,8 +2,10 @@ import { render } from "ink";
 import { createElement } from "react";
 import { App } from "#tui/App.js";
 import { LlmClient } from "#llm/client.js";
+import { ToolRegistry } from "#agent/index.js";
 
 const client = new LlmClient();
+const toolRegistry = new ToolRegistry();
 
 const healthy = await client.isHealthy();
 if (!healthy) {
@@ -19,5 +21,7 @@ console.log(
   `Connected to LM Studio. Available models: ${modelNames.join(", ")}`,
 );
 console.log("Starting TUI...\n");
+
+console.log(`Tools registered: ${String(toolRegistry.toLlmTools().length)}`);
 
 render(createElement(App, { llmClient: client }));

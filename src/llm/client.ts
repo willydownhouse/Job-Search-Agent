@@ -1,9 +1,13 @@
-import type { ChatMessage } from "#types/llm.js";
+import type {
+  ChatCompletionRequest,
+  ChatCompletionResponse,
+  ChatMessage,
+  ModelsResponse,
+} from "#types/llm.js";
 import {
   ChatCompletionResponseSchema,
   ModelsResponseSchema,
 } from "#types/llm.js";
-import type { ChatCompletionRequest, ModelsResponse } from "#types/llm.js";
 
 interface LlmClientConfig {
   baseUrl: string;
@@ -14,6 +18,10 @@ const DEFAULT_CONFIG: LlmClientConfig = {
   baseUrl: "http://localhost:1234",
   model: "google/gemma-4-26b-a4b",
 };
+
+interface ChatOptions {
+  tools?: ChatCompletionRequest["tools"];
+}
 
 export class LlmClient {
   private readonly config: LlmClientConfig;
@@ -43,12 +51,16 @@ export class LlmClient {
     }
   }
 
-  async chat(messages: ChatMessage[]): Promise<string> {
+  async chatCompletion(
+    messages: ChatMessage[],
+    options?: ChatOptions,
+  ): Promise<ChatCompletionResponse> {
     const body: ChatCompletionRequest = {
       model: this.config.model,
       messages,
       temperature: 0.7,
       stream: false,
+      ...(options?.tools ? { tools: options.tools } : {}),
     };
 
     const response = await fetch(`${this.config.baseUrl}/v1/chat/completions`, {
@@ -64,10 +76,14 @@ export class LlmClient {
       );
     }
 
-    const data = ChatCompletionResponseSchema.parse(await response.json());
+    return ChatCompletionResponseSchema.parse(await response.json());
+  }
+
+  async chat(messages: ChatMessage[]): Promise<string> {
+    const data = await this.chatCompletion(messages);
     const content = data.choices[0]?.message.content;
 
-    if (content === undefined) {
+    if (content === undefined || content === null) {
       throw new Error("No content in response from LLM");
     }
 
