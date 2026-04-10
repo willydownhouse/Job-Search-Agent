@@ -1,0 +1,27 @@
+{
+  "name": "job-search",
+  "version": "1.0.0",
+  "description": "AI agent that searches for open job positions using a local LLM",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "lint": "eslint src/",
+    "format": "prettier --write 'src/**/*.ts'",
+    "format:check": "prettier --check 'src/**/*.ts'",
+    "knip": "knip",
+    "check": "concurrently -n build,lint,format,knip -c blue,green,yellow,magenta \"npm:build\" \"npm:lint\" \"npm:format:check\" \"npm:knip\""
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^25.6.0",
+    "concurrently": "^9.2.1",
+    "eslint": "^10.2.0",
+    "eslint-config-prettier": "^10.1.8",
+    "knip": "^6.3.1",
+    "prettier": "^3.8.2",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2",
+    "typescript-eslint": "^8.58.1"
+  }
+}
