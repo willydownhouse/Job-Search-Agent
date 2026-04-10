@@ -20,4 +20,4 @@ console.log(
 );
 console.log("Starting TUI...\n");
 
-render(createElement(App));
+render(createElement(App, { llmClient: client }));
