@@ -2,7 +2,7 @@ import { render } from "ink";
 import { createElement } from "react";
 import { App } from "#tui/App.js";
 import { LlmClient } from "#llm/client.js";
-import { ToolRegistry } from "#agent/index.js";
+import { Agent, ToolRegistry } from "#agent/index.js";
 
 const client = new LlmClient();
 const toolRegistry = new ToolRegistry();
@@ -20,8 +20,13 @@ const modelNames = models.data.map((m) => m.id);
 console.log(
   `Connected to LM Studio. Available models: ${modelNames.join(", ")}`,
 );
+console.log(`Tools registered: ${String(toolRegistry.toLlmTools().length)}`);
 console.log("Starting TUI...\n");
 
-console.log(`Tools registered: ${String(toolRegistry.toLlmTools().length)}`);
+const agent = new Agent({
+  llmClient: client,
+  toolRegistry,
+  systemPrompt: "You are a helpful job search assistant.",
+});
 
-render(createElement(App, { llmClient: client }));
+render(createElement(App, { agent }));

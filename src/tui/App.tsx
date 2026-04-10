@@ -1,51 +1,86 @@
 import { useState, useCallback } from "react";
 import { Box, Text, useApp, useInput } from "ink";
 import TextInput from "ink-text-input";
-import type { LlmClient } from "#llm/client.js";
-import type { ChatMessage } from "#types/llm.js";
+import type { Agent, AgentEvent } from "#agent/index.js";
 import { Header } from "./components/Header.js";
 import { MessageArea } from "./components/MessageArea.js";
 
 export interface Message {
-  role: "user" | "assistant";
+  type: "user" | "assistant" | "tool_call" | "tool_result" | "error";
   content: string;
 }
 
 interface AppProps {
-  llmClient: LlmClient;
+  agent: Agent;
 }
 
-export function App({ llmClient }: AppProps) {
+export function App({ agent }: AppProps) {
   const app = useApp();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const sendToLlm = useCallback(
-    async (updatedMessages: Message[]) => {
+  const handleAgentEvent = useCallback((event: AgentEvent) => {
+    switch (event.type) {
+      case "tool_call": {
+        setMessages((prev) => [
+          ...prev,
+          {
+            type: "tool_call",
+            content: `Calling ${event.toolName}(${JSON.stringify(event.args)})`,
+          },
+        ]);
+        break;
+      }
+      case "tool_result": {
+        const preview =
+          event.result !== undefined && event.result.length > 200
+            ? `${event.result.slice(0, 200)}...`
+            : (event.result ?? "");
+        setMessages((prev) => [
+          ...prev,
+          {
+            type: "tool_result",
+            content: `${event.toolName} → ${preview}`,
+          },
+        ]);
+        break;
+      }
+      case "error": {
+        setMessages((prev) => [
+          ...prev,
+          {
+            type: "error",
+            content: `${event.toolName}: ${event.result ?? "Unknown error"}`,
+          },
+        ]);
+        break;
+      }
+    }
+  }, []);
+
+  const sendToAgent = useCallback(
+    async (userMessage: string) => {
       setIsLoading(true);
 
       try {
-        const chatMessages: ChatMessage[] = updatedMessages.map((m) => ({
-          role: m.role,
-          content: m.content,
-        }));
+        const reply = await agent.run(userMessage, {
+          onEvent: handleAgentEvent,
+        });
 
-        const reply = await llmClient.chat(chatMessages);
-
-        setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
+        setMessages((prev) => [...prev, { type: "assistant", content: reply }]);
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : "Unknown error";
         setMessages((prev) => [
           ...prev,
-          { role: "assistant", content: `Error: ${errorMessage}` },
+          { type: "error", content: errorMessage },
         ]);
       } finally {
         setIsLoading(false);
       }
     },
-    [llmClient],
+    [agent],
   );
 
   useInput((_input, key) => {
@@ -60,12 +95,10 @@ export function App({ llmClient }: AppProps) {
       return;
     }
 
-    const userMessage: Message = { role: "user", content: trimmed };
-    const updatedMessages = [...messages, userMessage];
-    setMessages(updatedMessages);
+    setMessages((prev) => [...prev, { type: "user", content: trimmed }]);
     setInput("");
 
-    void sendToLlm(updatedMessages);
+    void sendToAgent(trimmed);
   };
 
   return (
