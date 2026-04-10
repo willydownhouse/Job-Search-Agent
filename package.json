@@ -25,9 +25,17 @@
     "typescript": "^6.0.2",
     "typescript-eslint": "^8.58.1"
   },
+  "imports": {
+    "#agent/*": "./src/agent/*",
+    "#llm/*": "./src/llm/*",
+    "#tools/*": "./src/tools/*",
+    "#tui/*": "./src/tui/*",
+    "#types/*": "./src/types/*"
+  },
   "dependencies": {
     "ink": "^7.0.0",
     "ink-text-input": "^6.0.0",
-    "react": "^19.2.5"
+    "react": "^19.2.5",
+    "zod": "^4.3.6"
   }
 }
