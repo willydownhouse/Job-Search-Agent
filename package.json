@@ -4,7 +4,7 @@
   "description": "AI agent that searches for open job positions using a local LLM",
   "type": "module",
   "scripts": {
-    "dev": "tsx src/index.ts",
+    "dev": "node --env-file=.env --import tsx/esm src/index.ts",
     "build": "tsc",
     "lint": "eslint src/",
     "format": "prettier --write 'src/**/*.{ts,tsx}'",
