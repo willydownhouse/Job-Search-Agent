@@ -11,6 +11,12 @@ const parametersSchema = z.object({
     .max(20)
     .default(10)
     .describe("Number of results to return (1-20)"),
+  freshness: z
+    .enum(["pd", "pw", "pm", "py"])
+    .optional()
+    .describe(
+      "Filter by recency: pd = past day, pw = past week, pm = past month, py = past year",
+    ),
 });
 
 const BraveSearchResultSchema = z.object({
@@ -44,6 +50,9 @@ export function createWebSearchTool(): Tool<typeof parametersSchema> {
       const url = new URL(BRAVE_API_URL);
       url.searchParams.set("q", params.query);
       url.searchParams.set("count", String(params.count));
+      if (params.freshness) {
+        url.searchParams.set("freshness", params.freshness);
+      }
 
       const response = await fetch(url, {
         headers: {
@@ -70,6 +79,9 @@ export function createWebSearchTool(): Tool<typeof parametersSchema> {
       return results
         .map((r, i) => {
           const parts = [`${String(i + 1)}. ${r.title}`, `   ${r.url}`];
+          if (r.age) {
+            parts.push(`   Age: ${r.age}`);
+          }
           if (r.description) {
             parts.push(`   ${r.description}`);
           }
